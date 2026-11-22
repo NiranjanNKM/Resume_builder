@@ -45,6 +45,54 @@
 .upload-status.success { color: var(--green); }
 .upload-status.error { color: #c13f32; }
 
+.resume-paper .generated-header {
+  margin: -47px -55px 24px;
+  padding: 27px 45px 22px;
+  background: #111;
+  color: #fff;
+  text-align: center;
+}
+
+.resume-paper .generated-header h3 {
+  color: #fff;
+  font-size: 28px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.resume-paper .generated-header .contact {
+  margin: 7px 0 0;
+  color: #fff;
+  font-size: 10px;
+}
+
+.resume-paper .resume-headline {
+  color: #c81919;
+  font-size: 18px;
+  text-align: center;
+  font-weight: 800;
+}
+
+.resume-paper .role-value {
+  margin: 5px 0 20px;
+  color: #3f4f5c;
+  font-weight: 600;
+  text-align: center;
+}
+
+.resume-paper h4 {
+  margin: 22px 0 12px;
+  padding: 7px 10px;
+  border: 0;
+  background: #111;
+  color: #fff;
+  text-align: center;
+  font-size: 10px;
+}
+
+.resume-paper .competencies { line-height: 1.8; }
+.resume-paper pre { font-size: 10.5px; line-height: 1.55; }
+
 @media print {
   body { background: #fff; }
   .topbar, .hero, .workspace-grid, .output-header, .insights-card, footer { display: none !important; }
@@ -52,4 +100,5 @@
   .results-grid { display: block; }
   .resume-card { padding: 0; border: 0; background: #fff; }
   .resume-paper { box-shadow: none; min-height: 0; padding: 20px; }
+  .resume-paper .generated-header { margin: -20px -20px 22px; }
 }

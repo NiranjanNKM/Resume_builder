@@ -1,6 +1,15 @@
 const $ = (id) => document.getElementById(id);
-const fields = ['name', 'headline', 'location', 'contact', 'summary', 'experience', 'skills'];
-const stopWords = new Set('about after again also and are because been being but can could for from have into more most not our should that their them then there these they this through will with you your we who'.split(' '));
+const fields = ['name', 'headline', 'location', 'contact', 'summary', 'experience', 'skills', 'education', 'credentials'];
+const stopWords = new Set('about after again also and are because been being build building but can could experience for from have include includes including into more most not our should skills that their them then there these they this through will with you your we who role looking required preferred responsibilities qualifications candidate candidates strong excellent ability work working years'.split(' '));
+const skillPhrases = ['generative ai', 'machine learning', 'deep learning', 'data science', 'data engineering', 'computer vision', 'natural language processing', 'large language models', 'llm', 'rag', 'retrieval augmented generation', 'prompt engineering', 'fine-tuning', 'lora', 'qlora', 'peft', 'mlops', 'llmops', 'python', 'sql', 'pytorch', 'tensorflow', 'scikit-learn', 'xgboost', 'lightgbm', 'catboost', 'kubernetes', 'docker', 'gcp', 'aws', 'azure', 'vertex ai', 'spark', 'databricks', 'snowflake', 'airflow', 'faiss', 'vector database', 'a/b testing', 'hypothesis testing', 'causal inference', 'statistical modeling', 'recommendation systems', 'time series', 'nlp', 'transformers', 'bert', 'gpt', 'claude', 'gemini', 'vllm', 'model monitoring', 'ci/cd', 'stakeholder management', 'technical leadership', 'mentoring', 'product strategy', 'user research', 'figma', 'prototyping', 'design systems'];
+const evidenceAliases = {
+  'stakeholder management': ['stakeholder partnership', 'partnering with', 'stakeholders'],
+  'technical leadership': ['technical ownership', 'mentor', 'mentoring', 'led '],
+  'causal inference': ['causal analysis'],
+  'recommendation systems': ['recommender systems', 'recommender system'],
+  'large language models': ['llm', 'llms'],
+  'natural language processing': ['nlp'],
+};
 
 document.querySelectorAll('.toggle').forEach((button) => button.addEventListener('click', () => {
   document.querySelectorAll('.toggle').forEach((item) => item.classList.remove('active'));
@@ -29,14 +38,30 @@ function loadProfile() {
 
 function keywords(text) {
   return [...new Set((text.toLowerCase().match(/[a-z][a-z+#.-]{3,}/g) || [])
-    .filter((word) => !stopWords.has(word)))].slice(0, 80);
+    .map((word) => word.replace(/[.-]+$/g, ''))
+    .filter((word) => word && !stopWords.has(word)))].slice(0, 80);
+}
+
+function requirementTerms(text) {
+  const lower = text.toLowerCase();
+  const phrases = skillPhrases.filter((phrase) => lower.includes(phrase));
+  const words = keywords(text).filter((word) => !phrases.some((phrase) => phrase.includes(word)));
+  const counts = Object.fromEntries(words.map((word) => [word, (lower.match(new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g')) || []).length]));
+  const repeated = words.filter((word) => counts[word] > 1).slice(0, 18);
+  return [...new Set([...phrases, ...repeated, ...words.slice(0, 12)])].slice(0, 32)
+    .map((term) => ({ term, weight: term.includes(' ') ? 3 : Math.min(3, counts[term] || 1) }));
+}
+
+function hasProfileEvidence(profileText, term) {
+  return profileText.includes(term) || (evidenceAliases[term] || []).some((alias) => profileText.includes(alias));
 }
 
 function normalizeLines(text) {
-  return text.replace(/\r/g, '').split('\n').map((line) => line.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  return text.replace(/\r/g, '').split('\n').map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter((line) => line && !/\bPage\s+\d+$/i.test(line));
 }
 
-const sectionNames = ['summary', 'profile', 'objective', 'professional summary', 'experience', 'work experience', 'employment', 'skills', 'technical skills', 'core competencies', 'education', 'projects', 'certifications', 'achievements', 'awards'];
+const sectionNames = ['summary', 'profile', 'objective', 'professional summary', 'experience', 'professional experience', 'work experience', 'employment', 'skills', 'technical skills', 'core competencies', 'education', 'projects', 'certifications', 'achievements', 'awards', 'publications', 'publications and patent', 'education and awards'];
 
 function isHeading(line) {
   const normalized = line.toLowerCase().replace(/[:|]/g, '').trim();
@@ -59,22 +84,34 @@ function fillProfileFromText(rawText, fileName) {
   const lines = normalizeLines(text);
   if (text.length < 40 || lines.length < 3) throw new Error('Very little readable text was found in this file.');
 
-  const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] || '';
-  const phone = text.match(/(?:\+?\d[\d\s().-]{7,}\d)/)?.[0] || '';
-  const url = text.match(/https?:\/\/[^\s]+/i)?.[0] || '';
-  const identityLines = lines.filter((line) => !isHeading(line) && !line.includes('@') && !/\d{6,}/.test(line));
+  const emailLine = lines.slice(0, 15).find((line) => line.includes('@')) || '';
+  const phoneLine = lines.slice(0, 15).find((line) => (line.match(/\d/g) || []).length >= 8) || '';
+  const email = (emailLine.replace(/\s/g, '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i) || text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i) || [])[0] || '';
+  const phone = (phoneLine.match(/(?:\+?\d[\d\s().-]{7,}\d)/) || text.match(/(?:\+?\d[\d\s().-]{7,}\d)/) || [])[0] || '';
+  const headerText = lines.slice(0, 15).join(' ');
+  const urls = headerText.match(/(?:https?:\/\/[^\s]+|(?:linkedin\.com|github\.com|[\w.-]+\.github\.io)\/[^\s▪]+)/gi) || [];
+  const locationLine = lines.slice(0, 10).find((line) => /,\s*(?:india|usa|united states|uk|canada|australia)\b/i.test(line));
+  const location = locationLine?.split(/[▪•|]/)[0].trim() || '';
+  const identityLines = lines.filter((line) => !sectionNames.includes(line.toLowerCase().replace(/[:|]/g, '').trim()) && !line.includes('@') && !/\d{6,}/.test(line));
   const name = identityLines.find((line) => line.length < 55 && /^[A-Za-z][A-Za-z .'-]+$/.test(line));
   const headline = identityLines.find((line) => line !== name && line.length < 90);
   const summary = extractSection(lines, ['summary', 'profile', 'objective', 'professional summary']);
-  const experience = extractSection(lines, ['experience', 'work experience', 'employment']);
+  const experience = extractSection(lines, ['experience', 'professional experience', 'work experience', 'employment']);
   const skillText = extractSection(lines, ['skills', 'technical skills', 'core competencies']);
+  const combinedEducation = extractSection(lines, ['education', 'education and awards']);
+  const educationLines = combinedEducation.split('\n').filter((line) => !/award/i.test(line));
+  const awardLines = combinedEducation.split('\n').filter((line) => /award/i.test(line));
+  const credentials = [extractSection(lines, ['publications', 'publications and patent', 'certifications', 'achievements', 'awards']), ...awardLines].filter(Boolean).join('\n');
 
   if (name) $('name').value = name;
   if (headline) $('headline').value = headline;
-  $('contact').value = [email, phone, url].filter(Boolean).join(' · ');
-  $('summary').value = summary || lines.filter((line) => !isHeading(line) && line !== name && line !== headline && !line.includes('@')).slice(0, 4).join(' ');
+  if (location) $('location').value = location;
+  $('contact').value = [email, phone, ...urls.slice(0, 3)].filter(Boolean).join(' · ');
+  $('summary').value = summary || lines.filter((line) => !isHeading(line) && line !== name && line !== headline && !line.includes('@') && !/(linkedin|github|https?:|\.com\b|\.io\b)/i.test(line) && line !== locationLine).slice(0, 4).join(' ');
   $('experience').value = experience || text;
   $('skills').value = skillText ? skillText.replace(/[•|·]/g, ',').replace(/\n/g, ', ') : '';
+  $('education').value = educationLines.join('\n');
+  $('credentials').value = credentials;
   saveProfile();
   setUploadStatus(`Imported ${fileName}. Review the extracted fields, then add the job description.`, 'success');
 }
@@ -92,7 +129,20 @@ async function extractPdf(file) {
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    pages.push(content.items.map((item) => item.str).join(' '));
+    const rows = [];
+    content.items.filter((item) => item.str.trim()).forEach((item) => {
+      const x = item.transform[4];
+      const y = item.transform[5];
+      let row = rows.find((candidate) => Math.abs(candidate.y - y) < 3);
+      if (!row) {
+        row = { y, items: [] };
+        rows.push(row);
+      }
+      row.items.push({ x, text: item.str.trim() });
+    });
+    pages.push(rows.sort((a, b) => b.y - a.y)
+      .map((row) => row.items.sort((a, b) => a.x - b.x).map((item) => item.text).join(' '))
+      .join('\n'));
   }
   return pages.join('\n');
 }
@@ -141,23 +191,26 @@ function tailor() {
     return;
   }
 
-  const jdWords = keywords(source);
   const profileText = Object.values(profile).join(' ').toLowerCase();
-  const matched = jdWords.filter((word) => profileText.includes(word));
-  const selected = matched.slice(0, 14);
+  const requirements = requirementTerms(source);
+  const matchedRequirements = requirements.filter(({ term }) => hasProfileEvidence(profileText, term));
+  const selected = matchedRequirements.map(({ term }) => term).slice(0, 16);
   const relevantSkills = profile.skills.split(',').map((skill) => skill.trim()).filter(Boolean)
     .sort((a, b) => Number(source.toLowerCase().includes(b.toLowerCase())) - Number(source.toLowerCase().includes(a.toLowerCase())));
-  const score = Math.min(96, Math.max(20, Math.round((matched.length / Math.max(1, Math.min(jdWords.length, 30))) * 100)));
-  const gaps = jdWords.filter((word) => !profileText.includes(word))
-    .filter((word) => !['experience', 'design', 'product', 'team', 'work', 'using', 'years'].includes(word)).slice(0, 5);
+  const totalWeight = requirements.reduce((total, item) => total + item.weight, 0);
+  const matchedWeight = matchedRequirements.reduce((total, item) => total + item.weight, 0);
+  const score = Math.round((matchedWeight / Math.max(1, totalWeight)) * 100);
+  const gaps = requirements.filter(({ term }) => !hasProfileEvidence(profileText, term)).map(({ term }) => term).slice(0, 6);
   const strengthLine = selected.length ? ` Relevant strengths for this role include ${selected.slice(0, 6).join(', ')}.` : '';
 
-  $('matchScore').innerHTML = `${score}%<small>keyword alignment</small>`;
+  $('matchScore').innerHTML = `${score}%<small>${score >= 90 ? 'target reached' : 'verified ATS coverage'}</small>`;
   $('keywords').innerHTML = (selected.length ? selected : ['No direct keyword matches yet'])
     .map((keyword) => `<span class="chip">${escapeHtml(keyword)}</span>`).join('');
-  $('gaps').innerHTML = (gaps.length ? gaps : ['No obvious keyword gaps — review the full draft.'])
+  $('gaps').innerHTML = (gaps.length ? gaps.map((gap) => `${gap} - add only if supported by your experience`) : ['No obvious keyword gaps - review for accuracy and readability.'])
     .map((gap) => `<li>${escapeHtml(gap)}</li>`).join('');
-  $('resumePaper').innerHTML = `<h3>${escapeHtml(profile.name)}</h3><div class="resume-headline">${escapeHtml(profile.headline)}</div><div class="contact">${escapeHtml([profile.location, profile.contact].filter(Boolean).join(' · '))}</div><h4>PROFESSIONAL SUMMARY</h4><p>${escapeHtml(profile.summary + strengthLine)}</p><h4>RELEVANT EXPERIENCE</h4><pre>${escapeHtml(rankExperience(profile.experience, selected))}</pre><h4>CORE SKILLS</h4><p>${escapeHtml(relevantSkills.join(' · '))}</p>`;
+  const educationSection = profile.education ? `<h4>EDUCATION</h4><pre>${escapeHtml(profile.education)}</pre>` : '';
+  const credentialsSection = profile.credentials ? `<h4>PUBLICATIONS, CERTIFICATIONS & AWARDS</h4><pre>${escapeHtml(profile.credentials)}</pre>` : '';
+  $('resumePaper').innerHTML = `<header class="generated-header"><h3>${escapeHtml(profile.name)}</h3><div class="contact">${escapeHtml([profile.location, profile.contact].filter(Boolean).join(' · '))}</div></header><div class="resume-headline">${escapeHtml(profile.headline)}</div><p class="role-value">Targeted, evidence-based resume aligned to the selected opportunity</p><h4>PROFESSIONAL SUMMARY</h4><p>${escapeHtml(profile.summary + strengthLine)}</p><h4>CORE COMPETENCIES</h4><p class="competencies">${escapeHtml(relevantSkills.join(' · '))}</p><h4>PROFESSIONAL EXPERIENCE</h4><pre>${escapeHtml(rankExperience(profile.experience, selected))}</pre>${credentialsSection}${educationSection}`;
   $('output').classList.remove('hidden');
   $('output').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
