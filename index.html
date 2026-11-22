@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d1b2a" />
+    <meta name="description" content="A private, GitHub Pages-ready resume tailoring workspace." />
+    <title>RoleFit — Resume tailoring workspace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar"><a class="brand" href="#top"><span class="brand-mark">✦</span> rolefit</a><div class="topbar-note"><span class="status-dot"></span> Local-first · GitHub Pages ready</div></header>
+    <main id="top" class="shell">
+      <section class="hero"><div class="eyebrow">YOUR NEXT ROLE, BETTER ALIGNED</div><h1>Make your experience<br /><em>fit the opportunity.</em></h1><p class="hero-copy">Paste a job description, drop in a public link, and turn your resume into a focused application package — without sending your data to a server.</p><div class="hero-stats"><span><strong>01</strong> Add your profile</span><span><strong>02</strong> Add the role</span><span><strong>03</strong> Tailor & export</span></div></section>
+      <section class="workspace-grid">
+        <div class="panel profile-panel"><div class="panel-heading"><div><div class="step-label">STEP 01</div><h2>Your baseline</h2></div><span class="panel-icon">◎</span></div><p class="muted">Keep this truthful master profile. RoleFit only rearranges and emphasizes what is already here.</p><label>NAME <input id="name" value="Alex Morgan" placeholder="Your name" /></label><div class="two-col"><label>ROLE / HEADLINE <input id="headline" value="Product Designer & UX Strategist" placeholder="Your headline" /></label><label>LOCATION <input id="location" value="Bengaluru, India · Open to remote" placeholder="City, country" /></label></div><label>SUMMARY <textarea id="summary" rows="4">Product designer with 7+ years shaping clear, useful digital products from research through launch. I partner with engineering and business teams to turn complex workflows into simple experiences and measurable outcomes.</textarea></label><label>EXPERIENCE <textarea id="experience" rows="8">Senior Product Designer · Northstar Labs · 2021–Present
+Led end-to-end design for a B2B workflow platform used by 18k+ monthly users.
+Improved activation by 24% through research-led onboarding and rapid experimentation.
+Built a shared component system that reduced design-to-development time by 30%.
+
+Product Designer · Brightside Studio · 2018–2021
+Delivered web and mobile experiences for fintech and health-tech clients.
+Facilitated workshops, usability testing, and alignment sessions with cross-functional teams.</textarea></label><label>SKILLS <input id="skills" value="Product strategy, UX research, interaction design, Figma, prototyping, design systems, usability testing, stakeholder management" placeholder="Comma-separated skills" /></label><button id="saveProfile" class="text-button">Save baseline locally <span>↗</span></button></div>
+        <div class="panel role-panel"><div class="panel-heading"><div><div class="step-label">STEP 02</div><h2>The opportunity</h2></div><span class="panel-icon">⌁</span></div><p class="muted">Use the job description directly, or paste a public job / LinkedIn URL as a starting point.</p><div class="input-toggle"><button class="toggle active" data-mode="text">Paste text</button><button class="toggle" data-mode="url">Use a link</button></div><div id="textInput"><label>JOB DESCRIPTION <textarea id="jobText" rows="13" placeholder="Paste the full job description here…">We are looking for a Senior Product Designer to define intuitive experiences for our collaboration platform. You will lead discovery, partner closely with product and engineering, run customer research, and evolve our design system. You have strong communication skills, strategic thinking, and a track record of shipping products used at scale.
+
+You should have 5+ years of product design experience, proficiency in Figma, and experience with user research, prototyping, usability testing, and cross-functional collaboration.</textarea></label></div><div id="urlInput" class="hidden"><label>PUBLIC JOB OR LINKEDIN URL <input id="jobUrl" type="url" placeholder="https://www.linkedin.com/jobs/view/..." /></label><div class="notice">LinkedIn usually prevents websites from reading job content directly. Paste the description below after opening the link if extraction is blocked.</div><label>OPTIONAL COPIED DESCRIPTION <textarea id="urlText" rows="7" placeholder="Paste any text copied from the link here…"></textarea></label></div><button id="tailor" class="primary-button">Tailor my resume <span>→</span></button><div id="roleNote" class="microcopy">Your profile stays in this browser. Nothing is uploaded.</div></div>
+      </section>
+      <section id="output" class="output-section hidden"><div class="output-header"><div><div class="eyebrow">YOUR TAILORED APPLICATION</div><h2>Ready for a closer look.</h2></div><div class="output-actions"><button id="download" class="secondary-button">Download .txt <span>↓</span></button><button id="print" class="primary-button small">Print / save PDF <span>↗</span></button></div></div><div class="results-grid"><article class="resume-card"><div class="resume-paper" id="resumePaper"></div></article><aside class="insights-card"><div class="step-label">ROLE SIGNALS</div><h3>What changed</h3><div id="matchScore" class="score">—<small>match signal</small></div><div class="signal-group"><div class="signal-title">Prioritized keywords</div><div id="keywords" class="chips"></div></div><div class="signal-group"><div class="signal-title">Gaps to consider</div><ul id="gaps"></ul></div><div class="privacy-callout">✦ <span>This draft is generated locally from your inputs. Review every claim before sending.</span></div></aside></div></section>
+    </main><footer><span>rolefit / private by default</span><span>Built for GitHub Pages</span></footer><script src="app.js"></script>
+  </body>
+</html>
