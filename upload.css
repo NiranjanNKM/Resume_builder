@@ -1,0 +1,55 @@
+.upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px dashed #9fb3c2;
+  border-radius: 11px;
+  background: #f5f9fc;
+  padding: 24px 18px;
+  text-align: center;
+  transition: 0.2s ease;
+}
+
+.upload-zone:hover,
+.upload-zone.dragging,
+.upload-zone:focus {
+  border-color: var(--blue);
+  background: #eef6ff;
+  outline: none;
+}
+
+.upload-zone strong { font-size: 14px; }
+.upload-zone small { font-size: 10px; color: var(--muted); }
+.upload-zone .secondary-button { margin-top: 5px; padding: 9px 13px; }
+.upload-icon {
+  display: grid;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  border-radius: 50%;
+  background: #e2edfb;
+  color: var(--blue);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.upload-status {
+  min-height: 18px;
+  margin-top: 9px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.upload-status.success { color: var(--green); }
+.upload-status.error { color: #c13f32; }
+
+@media print {
+  body { background: #fff; }
+  .topbar, .hero, .workspace-grid, .output-header, .insights-card, footer { display: none !important; }
+  .shell, .output-section { padding: 0; margin: 0; }
+  .results-grid { display: block; }
+  .resume-card { padding: 0; border: 0; background: #fff; }
+  .resume-paper { box-shadow: none; min-height: 0; padding: 20px; }
+}
