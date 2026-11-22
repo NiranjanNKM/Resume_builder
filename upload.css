@@ -93,12 +93,23 @@
 .resume-paper .competencies { line-height: 1.8; }
 .resume-paper pre { font-size: 10.5px; line-height: 1.55; }
 
+@page {
+  size: A4;
+  margin: 11mm 12mm;
+}
+
 @media print {
+  html, body, .resume-paper, .resume-paper * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   body { background: #fff; }
   .topbar, .hero, .workspace-grid, .output-header, .insights-card, footer { display: none !important; }
   .shell, .output-section { padding: 0; margin: 0; }
   .results-grid { display: block; }
   .resume-card { padding: 0; border: 0; background: #fff; }
-  .resume-paper { box-shadow: none; min-height: 0; padding: 20px; }
-  .resume-paper .generated-header { margin: -20px -20px 22px; }
+  .resume-paper { box-shadow: none; min-height: 0; padding: 0; }
+  .resume-paper .generated-header { margin: 0 0 18px; background: #111 !important; }
+  .resume-paper h4 { background: #111 !important; break-after: avoid; }
+  .resume-paper p, .resume-paper pre { orphans: 3; widows: 3; }
 }

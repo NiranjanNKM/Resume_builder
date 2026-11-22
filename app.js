@@ -48,7 +48,8 @@ function requirementTerms(text) {
   const words = keywords(text).filter((word) => !phrases.some((phrase) => phrase.includes(word)));
   const counts = Object.fromEntries(words.map((word) => [word, (lower.match(new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g')) || []).length]));
   const repeated = words.filter((word) => counts[word] > 1).slice(0, 18);
-  return [...new Set([...phrases, ...repeated, ...words.slice(0, 12)])].slice(0, 32)
+  const meaningful = [...new Set([...phrases, ...repeated])];
+  return (meaningful.length ? meaningful : words.slice(0, 12)).slice(0, 32)
     .map((term) => ({ term, weight: term.includes(' ') ? 3 : Math.min(3, counts[term] || 1) }));
 }
 
@@ -186,6 +187,10 @@ function tailor() {
     $('roleNote').textContent = 'Add a job description or paste copied text from the link first.';
     return;
   }
+  if (source.split(/\s+/).length < 25) {
+    $('roleNote').textContent = 'Paste the complete job description so the coverage score is reliable.';
+    return;
+  }
   if (!profile.experience && !profile.summary) {
     $('roleNote').textContent = 'Upload a resume or add your experience before tailoring.';
     return;
@@ -195,8 +200,15 @@ function tailor() {
   const requirements = requirementTerms(source);
   const matchedRequirements = requirements.filter(({ term }) => hasProfileEvidence(profileText, term));
   const selected = matchedRequirements.map(({ term }) => term).slice(0, 16);
-  const relevantSkills = profile.skills.split(',').map((skill) => skill.trim()).filter(Boolean)
-    .sort((a, b) => Number(source.toLowerCase().includes(b.toLowerCase())) - Number(source.toLowerCase().includes(a.toLowerCase())));
+  const sourceLower = source.toLowerCase();
+  const profileSkills = profile.skills.split(',').map((skill) => skill.trim()).filter(Boolean);
+  const roleSkills = profileSkills.filter((skill) => {
+    const skillLower = skill.toLowerCase();
+    return sourceLower.includes(skillLower) || keywords(skill).some((word) => sourceLower.includes(word));
+  });
+  const competencyCandidates = selected.length >= 8 ? selected : [...selected, ...roleSkills];
+  const relevantSkills = competencyCandidates.filter((skill, index, values) => values
+    .findIndex((value) => value.toLowerCase() === skill.toLowerCase()) === index).slice(0, 20);
   const totalWeight = requirements.reduce((total, item) => total + item.weight, 0);
   const matchedWeight = matchedRequirements.reduce((total, item) => total + item.weight, 0);
   const score = Math.round((matchedWeight / Math.max(1, totalWeight)) * 100);
@@ -224,9 +236,24 @@ function download() {
   const blob = new Blob([text], { type: 'text/plain' });
   const anchor = document.createElement('a');
   anchor.href = URL.createObjectURL(blob);
-  anchor.download = 'tailored-resume.txt';
+  anchor.download = `${safeCandidateName()}.txt`;
   anchor.click();
   URL.revokeObjectURL(anchor.href);
+}
+
+function safeCandidateName() {
+  return (getProfile().name || 'Tailored_Resume').trim().replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '');
+}
+
+function printResume() {
+  const previousTitle = document.title;
+  const fileName = safeCandidateName();
+  document.title = fileName;
+  $('roleNote').textContent = `Save as ${fileName}.pdf. In the print dialog, turn off Headers and footers.`;
+  const restoreTitle = () => { document.title = previousTitle; };
+  window.addEventListener('afterprint', restoreTitle, { once: true });
+  window.print();
+  setTimeout(restoreTitle, 60000);
 }
 
 $('chooseFile').addEventListener('click', (event) => { event.stopPropagation(); $('resumeFile').click(); });
@@ -239,5 +266,5 @@ $('uploadZone').addEventListener('drop', (event) => extractResume(event.dataTran
 $('saveProfile').addEventListener('click', saveProfile);
 $('tailor').addEventListener('click', tailor);
 $('download').addEventListener('click', download);
-$('print').addEventListener('click', () => window.print());
+$('print').addEventListener('click', printResume);
 loadProfile();
