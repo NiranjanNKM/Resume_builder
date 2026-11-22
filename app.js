@@ -1,10 +1,12 @@
 const $ = (id) => document.getElementById(id);
-const fields = ['name', 'headline', 'location', 'contact', 'summary', 'experience', 'skills', 'education', 'credentials'];
-const stopWords = new Set('about after again also and are because been being build building but can could experience for from have include includes including into more most not our should skills that their them then there these they this through will with you your we who role looking required preferred responsibilities qualifications candidate candidates strong excellent ability work working years'.split(' '));
-const skillPhrases = ['generative ai', 'machine learning', 'deep learning', 'data science', 'data engineering', 'computer vision', 'natural language processing', 'large language models', 'llm', 'rag', 'retrieval augmented generation', 'prompt engineering', 'fine-tuning', 'lora', 'qlora', 'peft', 'mlops', 'llmops', 'python', 'sql', 'pytorch', 'tensorflow', 'scikit-learn', 'xgboost', 'lightgbm', 'catboost', 'kubernetes', 'docker', 'gcp', 'aws', 'azure', 'vertex ai', 'spark', 'databricks', 'snowflake', 'airflow', 'faiss', 'vector database', 'a/b testing', 'hypothesis testing', 'causal inference', 'statistical modeling', 'recommendation systems', 'time series', 'nlp', 'transformers', 'bert', 'gpt', 'claude', 'gemini', 'vllm', 'model monitoring', 'ci/cd', 'stakeholder management', 'technical leadership', 'mentoring', 'product strategy', 'user research', 'figma', 'prototyping', 'design systems'];
+const fields = ['name', 'headline', 'location', 'contact', 'summary', 'experience', 'skills', 'verifiedSkills', 'education', 'credentials'];
+const stopWords = new Set('about after again also and are because been being build building but can could designer experience experiences for from have include includes including intuitive into more most not our should skills that their them then there these they this through will with you your we who role looking required preferred responsibilities qualifications candidate candidates strong excellent ability work working years'.split(' '));
+const skillPhrases = ['generative ai', 'machine learning', 'deep learning', 'data science', 'data engineering', 'computer vision', 'natural language processing', 'large language models', 'llm', 'rag', 'retrieval augmented generation', 'prompt engineering', 'fine-tuning', 'lora', 'qlora', 'peft', 'mlops', 'llmops', 'python', 'sql', 'pytorch', 'tensorflow', 'scikit-learn', 'xgboost', 'lightgbm', 'catboost', 'kubernetes', 'docker', 'gcp', 'aws', 'azure', 'vertex ai', 'spark', 'databricks', 'snowflake', 'airflow', 'faiss', 'vector database', 'a/b testing', 'hypothesis testing', 'causal inference', 'statistical modeling', 'recommendation systems', 'time series', 'nlp', 'transformers', 'bert', 'gpt', 'claude', 'gemini', 'vllm', 'model monitoring', 'ci/cd', 'stakeholder management', 'technical leadership', 'collaboration', 'mentoring', 'product strategy', 'user research', 'figma', 'prototyping', 'design systems'];
 const evidenceAliases = {
   'stakeholder management': ['stakeholder partnership', 'partnering with', 'stakeholders'],
   'technical leadership': ['technical ownership', 'mentor', 'mentoring', 'led '],
+  collaboration: ['cross-functional', 'partnering with', 'stakeholder partnership', 'stakeholders'],
+  'user research': ['ux research'],
   'causal inference': ['causal analysis'],
   'recommendation systems': ['recommender systems', 'recommender system'],
   'large language models': ['llm', 'llms'],
@@ -201,7 +203,7 @@ function tailor() {
   const matchedRequirements = requirements.filter(({ term }) => hasProfileEvidence(profileText, term));
   const selected = matchedRequirements.map(({ term }) => term).slice(0, 16);
   const sourceLower = source.toLowerCase();
-  const profileSkills = profile.skills.split(',').map((skill) => skill.trim()).filter(Boolean);
+  const profileSkills = `${profile.skills},${profile.verifiedSkills}`.split(',').map((skill) => skill.trim()).filter(Boolean);
   const roleSkills = profileSkills.filter((skill) => {
     const skillLower = skill.toLowerCase();
     return sourceLower.includes(skillLower) || keywords(skill).some((word) => sourceLower.includes(word));
@@ -218,11 +220,12 @@ function tailor() {
   $('matchScore').innerHTML = `${score}%<small>${score >= 90 ? 'target reached' : 'verified ATS coverage'}</small>`;
   $('keywords').innerHTML = (selected.length ? selected : ['No direct keyword matches yet'])
     .map((keyword) => `<span class="chip">${escapeHtml(keyword)}</span>`).join('');
-  $('gaps').innerHTML = (gaps.length ? gaps.map((gap) => `${gap} - add only if supported by your experience`) : ['No obvious keyword gaps - review for accuracy and readability.'])
-    .map((gap) => `<li>${escapeHtml(gap)}</li>`).join('');
+  $('gaps').innerHTML = gaps.length
+    ? gaps.map((gap) => `<li><span>${escapeHtml(gap)}</span><button type="button" class="gap-add" data-skill="${encodeURIComponent(gap)}">I have this - add</button></li>`).join('')
+    : '<li>No obvious keyword gaps - review for accuracy and readability.</li>';
   const educationSection = profile.education ? `<h4>EDUCATION</h4><pre>${escapeHtml(profile.education)}</pre>` : '';
   const credentialsSection = profile.credentials ? `<h4>PUBLICATIONS, CERTIFICATIONS & AWARDS</h4><pre>${escapeHtml(profile.credentials)}</pre>` : '';
-  $('resumePaper').innerHTML = `<header class="generated-header"><h3>${escapeHtml(profile.name)}</h3><div class="contact">${escapeHtml([profile.location, profile.contact].filter(Boolean).join(' · '))}</div></header><div class="resume-headline">${escapeHtml(profile.headline)}</div><p class="role-value">Targeted, evidence-based resume aligned to the selected opportunity</p><h4>PROFESSIONAL SUMMARY</h4><p>${escapeHtml(profile.summary + strengthLine)}</p><h4>CORE COMPETENCIES</h4><p class="competencies">${escapeHtml(relevantSkills.join(' · '))}</p><h4>PROFESSIONAL EXPERIENCE</h4><pre>${escapeHtml(rankExperience(profile.experience, selected))}</pre>${credentialsSection}${educationSection}`;
+  $('resumePaper').innerHTML = `<header class="generated-header"><h3>${escapeHtml(profile.name)}</h3><div class="contact">${escapeHtml([profile.location, profile.contact].filter(Boolean).join(' · '))}</div></header><div class="resume-headline">${escapeHtml(profile.headline)}</div><h4>PROFESSIONAL SUMMARY</h4><p>${escapeHtml(profile.summary + strengthLine)}</p><h4>CORE COMPETENCIES</h4><p class="competencies">${escapeHtml(relevantSkills.join(' · '))}</p><h4>PROFESSIONAL EXPERIENCE</h4><pre>${escapeHtml(rankExperience(profile.experience, selected))}</pre>${credentialsSection}${educationSection}`;
   $('output').classList.remove('hidden');
   $('output').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -256,6 +259,18 @@ function printResume() {
   setTimeout(restoreTitle, 60000);
 }
 
+function addVerifiedGap(event) {
+  const button = event.target.closest('.gap-add');
+  if (!button) return;
+  const skill = decodeURIComponent(button.dataset.skill || '').trim();
+  if (!skill) return;
+  const current = $('verifiedSkills').value.split(',').map((item) => item.trim()).filter(Boolean);
+  if (!current.some((item) => item.toLowerCase() === skill.toLowerCase())) current.push(skill);
+  $('verifiedSkills').value = current.join(', ');
+  saveProfile();
+  tailor();
+}
+
 $('chooseFile').addEventListener('click', (event) => { event.stopPropagation(); $('resumeFile').click(); });
 $('uploadZone').addEventListener('click', () => $('resumeFile').click());
 $('uploadZone').addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') $('resumeFile').click(); });
@@ -265,6 +280,7 @@ $('resumeFile').addEventListener('change', (event) => extractResume(event.target
 $('uploadZone').addEventListener('drop', (event) => extractResume(event.dataTransfer.files[0]));
 $('saveProfile').addEventListener('click', saveProfile);
 $('tailor').addEventListener('click', tailor);
+$('gaps').addEventListener('click', addVerifiedGap);
 $('download').addEventListener('click', download);
 $('print').addEventListener('click', printResume);
 loadProfile();
